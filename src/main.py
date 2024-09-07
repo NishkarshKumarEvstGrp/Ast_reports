@@ -10,8 +10,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from urllib.parse import urljoin
-
+from src.utils import search_url_in_file, write_url_to_file
 load_dotenv()
+
+reports_path = os.getenv("FILE_PATH")+'/ast_reports'
 print("scrapping started")
 chrome_options = Options()
 chrome_options.add_argument("--no-sandbox")
@@ -19,11 +21,12 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-popup-blocking")
 chrome_options.add_experimental_option("prefs", {
-    "download.default_directory": "/workspaces/Ast_reports/Ast_Reports",  # Set your desired download folder here
+    "download.default_directory": r"C:\Users\Nishkarsh.Kumar\OneDrive - Everest Group\Desktop\Projects\Ast_reports\ast_reports",  # Set your desired download folder here
     "download.prompt_for_download": False,
     "download.directory_upgrade": True,
     "safebrowsing.enabled": True
 })
+
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
@@ -64,9 +67,12 @@ time.sleep(2)
 # Get product links and iterate through them
 product_links = driver.find_elements(By.CSS_SELECTOR, ".product-listing-title a")
 index = 0
-
+file_path = os.getenv("FILE_PATH")+"/src/product_links.txt"
 while index < len(product_links):
     link_url = product_links[index].get_attribute("href")
+    if search_url_in_file(file_path=file_path, target_url=link_url) != -1:
+        index += 1
+        continue
     try:
         driver.get(link_url)
         driver.implicitly_wait(5)
@@ -78,6 +84,7 @@ while index < len(product_links):
             )
             download_link.click()
             print(f"Downloading from: {link_url}")
+            write_url_to_file(file_path=file_path, url=link_url)
             time.sleep(5)  # Wait for the download to initiate
         except Exception as e:
             print(f"Failed to download from: {link_url}. Error: {e}")
